@@ -55,14 +55,15 @@ p_burrow <- p_burrow +
         axis.text.x = element_text(size = 9), 
         axis.text.y = element_text(size = 10)) 
   
-p_burrow <- p_burrow + 
+p_burrow <- p_burrow +  
   # wet season
-  annotate("segment", x = 0.92, xend = 1.08, y = 0.48, yend = 0.48, size  = 0.6, colour = "gray50") + 
-  annotate("text", x = 1, y = 0.485, label = "*", size = 4, colour = "gray50") +
+  annotate("segment", x = 0.92, xend = 1.24, y = 0.48, yend = 0.48, size  = 0.6, colour = "gray50") + 
+  annotate("segment", x = 0.92, xend = 1.08, y = 0.488, yend = 0.488, size  = 0.6, colour = "gray50") + 
+  annotate("text", x = 1.08, y = 0.494, label = "*", size = 4, colour = "gray50") +
   # dry season
-  annotate("segment", x = 1.92, xend = 2.24, y = 0.41, yend = 0.41, size  = 0.6, colour = "gray50") + 
-  annotate("segment", x = 1.92, xend = 2.08, y = 0.418, yend = 0.418, size  = 0.6, colour = "gray50") + 
-  annotate("text", x = 2.08, y = 0.424, label = "*", size = 4, colour = "gray50")
+  annotate("segment", x = 1.92, xend = 2.08, y = 0.4, yend = 0.4, size  = 0.6, colour = "gray50") + 
+  annotate("text", x = 2, y = 0.408, label = "*", size = 4, colour = "gray50") 
+ 
 
 # Call in the morning weight gain plot 
 p_weightgain <- readRDS("Plots/plot_mwg_habitat.RDS")
@@ -83,7 +84,7 @@ p_weightgain <- p_weightgain +
   # dry season
   annotate("segment", x = 1.75, xend = 2.24, y = 6, yend = 6, size = 0.5, colour = "gray50") + 
   annotate("segment", x = 1.75, xend = 2.08, y = 6.1, yend = 6.1, size = 0.5, colour = "gray50") + 
-  annotate("segment", x = 1.92, xend = 2.24, y = 6.2, yend = 6.2, size = 0.5, colour = "gray50") + 
+  annotate("segment", x = 1.75, xend = 1.92, y = 6.2, yend = 6.2, size = 0.5, colour = "gray50") + 
   annotate("segment", x = 1.92, xend = 2.08, y = 6.3, yend = 6.3, size = 0.5, colour = "gray50")  + 
   annotate("text", x = 2, y = 6.37, label = "*", size = 4, colour = "gray50")
 
@@ -130,8 +131,8 @@ p_tracklength <- p_tracklength +
 p_tracklength <- p_tracklength + 
   # wet season
   annotate("segment", x = 0.75, xend = 1.24, y = 690, yend = 690, size = 0.5, colour = "gray50") + 
-  annotate("segment", x = 0.75, xend = 1.08, y = 694, yend = 694, size = 0.5, colour = "gray50") + 
-  annotate("segment", x = 0.92, xend = 1.24, y = 698, yend = 698, size = 0.5, colour = "gray50") + 
+  annotate("segment", x = 0.92, xend = 1.24, y = 694, yend = 694, size = 0.5, colour = "gray50") + 
+  annotate("segment", x = 1.08, xend = 1.24, y = 698, yend = 698, size = 0.5, colour = "gray50") + 
   annotate("segment", x = 0.92, xend = 1.08, y = 702, yend = 702, size = 0.5, colour = "gray50") + 
   annotate("text", x = 1, y = 705, label = "*", size = 4, colour = "gray50") +
   # dry season

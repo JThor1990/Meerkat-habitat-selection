@@ -68,6 +68,7 @@ mwg_contrast <- data.frame(mwg_contrast$contrasts) %>%
 plot(ggeffect(mwg_mod, term = "habitat"))
 plot(ggeffect(mwg_mod, term = "season"))
 plot(ggeffect(mwg_mod, terms = c("season", "habitat")))
+plot(ggeffect(mwg_mod, terms = "Sex"))
 plot(ggeffect(mwg_mod, term = "GroupSize_z"))
 plot(ggeffect(mwg_mod, term = "Age_years_z"))
 plot(ggeffect(mwg_mod, term = "PupPresence"))
@@ -115,9 +116,10 @@ p_habitatseason <- ggplot(data = p_habitatseason,
 p1a <- plot(ggeffect(mwg_mod, terms = "GroupSize_z"))
 p1b <- plot(ggeffect(mwg_mod, terms = c("PupPresence", "season")))
 p1c <- plot(ggeffect(mwg_mod, terms = c("Age_years_z")))
-p1d <- plot(ggeffect(mwg_mod, terms = "breedingyear"))
+p1d <- plot(ggeffect(mwg_mod, terms = c("Sex")))
+p1e <- plot(ggeffect(mwg_mod, terms = "breedingyear"))
 
-p1a + p1b + p1c + p1a +
+p1a + p1b + p1c + p1d + p1e +
   plot_layout(nrow = 2)
 
 # Amend slightly so as un-scaled etc... 
@@ -188,14 +190,28 @@ p1c <- ggplot(p1c_dat, aes(x = Age, y = predicted)) +
                      limits = c(4, 9)) + 
   scale_x_continuous(breaks = 1:10)
 
+# Sex 
+p1d_dat <- data.frame(ggeffect(mwg_mod, terms = "Sex")) %>% 
+  mutate(x = if_else(x == "F", "Females", "Males"))
+
+p1d <- ggplot(p1d_dat, aes(x = x, y = predicted)) + 
+  geom_errorbar(aes(ymin = conf.low, ymax = conf.high), width = 0, linewidth = 0.8) + 
+  geom_point(shape = 21, fill = "white", colour = "black", size = 2.5, stroke = 0.8) + 
+  plot_theme + 
+  labs(x = "Sex", y = "Rate of morning\nweight gain (g/hr)", tag = "D") + 
+  scale_y_continuous(breaks = seq(4, 9, 0.5), 
+                     labels = c(4, "", 5, "", 6, "", 7, "", 8, "", 9), 
+                     limits = c(4, 9)) 
+
+
 # Breeding season
-p1d_dat <- data.frame(ggeffect(mwg_mod, terms = "breedingyear")) %>% 
+p1e_dat <- data.frame(ggeffect(mwg_mod, terms = "breedingyear")) %>% 
   rename(breedingyear = x) %>% 
   mutate(predicted = predicted, 
          conf.low = conf.low, 
          conf.high = conf.high)
 
-p1d <- ggplot(p1d_dat, aes(x = breedingyear, y = predicted)) + 
+p1e <- ggplot(p1d_dat, aes(x = breedingyear, y = predicted)) + 
   geom_errorbar(aes(ymin = conf.low, ymax = conf.high), width = 0, linewidth = 0.8) + 
   geom_point(shape = 21, fill = "white", colour = "black", size = 2.5, stroke = 0.8) + 
   plot_theme + 
@@ -206,10 +222,10 @@ p1d <- ggplot(p1d_dat, aes(x = breedingyear, y = predicted)) +
                      limits = c(4, 9.5))
 
 layout_matrix <- "AB
-                  .C
-                  DD"
+                  CD
+                  EE"
 
-p1_final <- p1c + p1a + p1b + plot_spacer() + p1d +
+p1_final <- p1a + p1b + p1c + p1d + p1e +
   plot_layout(design = layout_matrix)
 #saveRDS(p1_final, "plot_mwg_other.RDS")
 

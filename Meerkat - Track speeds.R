@@ -10,7 +10,7 @@
 setwd("C:/Users/Jack/OneDrive/Documents/Kalahari/Cambridge LARG/Cambridge PostDoc2/Meerkat/Meerkat habitat selection/Final Github scripts/")
 
 # Load packages 
-lapply(c("tidyverse", "lubridate", "nlme", "ggeffects", "emmeans", "DHARMa"), 
+lapply(c("tidyverse", "lubridate", "nlme", "ggeffects", "emmeans", "DHARMa", "patchwork"), 
        FUN = library, character.only = TRUE)
 
 # Load in the data
@@ -18,7 +18,9 @@ tracks_df <- read.csv("df_morningtracks.csv", header = TRUE)
   
 # Rework some of the variables before modelling
 tracks_df <- mutate(tracks_df, 
-                    Date = as.Date(Date),
+                    Date = dmy(Date),
+                    Time = dmy_hm(Time),
+                    BurrowLeaveTime = dmy_hm(BurrowLeaveTime),
                     breedingyear = as.factor(breedingyear), 
                     GroupSize_z = as.numeric(scale(GroupSize)), 
                     TimeForaging_z = as.numeric(scale(TimeForaging)))
@@ -60,18 +62,19 @@ summary(speed_mod)
 hist(resid(speed_mod), breaks = 50) 
 # slight skew but pretty decent and produces similar results to a gamma model without the corCAR1
 
-# For the gamma can't have non-zero 
-# tracks_df <- filter(tracks_df, Speed != 0)
-# speed_mod <- glmmTMB(Speed ~ HabType*period + 
+# A gamma implementation
+# The gamma family can't have non-zero 
+#tracks_df_no0 <- filter(tracks_df, Speed != 0) # lose ~ 30 records
+#speed_mod_gamma <- glmmTMB(Speed ~ habitat*season + 
 #                         GroupSize_z  + I(GroupSize_z^2) + 
 #                         PupPresence + 
 #                         TimeForaging_z + I(TimeForaging_z^2) + 
 #                         breedingyear + 
 #                         (1 |GroupName/Date),
 #                       family = Gamma(link = "log"), 
-#                       data = tracks_df) 
-# summary(speed_mod)
-# plot(simulateResiduals(speed_mod))
+#                       data = tracks_df_no0) 
+#summary(speed_mod_gamma)
+#plot(simulateResiduals(speed_mod_gamma))
 
 # Also worth checking if there is any outstanding spatial structure in the residuals
 # we'll randomly some of the data as it very large and computationally expensive on full dataset
@@ -95,14 +98,24 @@ speed_contrast <- data.frame(speed_contrast$contrasts) %>%
   mutate(estimate = estimate*-1) # easier to compare the levels
 
 # Get the marginal effects before "tidying" up the plots myself: 
-#plot(ggeffect(speed_mod, term = "habitat"))
-#plot(ggeffect(speed_mod, term = "season"))
-#plot(ggeffect(speed_mod, terms = c("season", "habitat")))
-#plot(ggeffect(speed_mod, term = "GroupSize_z"))
-#plot(ggeffect(speed_mod, term = "PupPresence"))
-#plot(ggeffect(speed_mod, term = c("PupPresence", "season")))
-#plot(ggeffect(speed_mod, term = "TimeForaging_z"))
-#plot(ggeffect(speed_mod, term = "breedingyear"))
+plot(ggeffect(speed_mod, term = "habitat"))
+plot(ggeffect(speed_mod, term = "season"))
+plot(ggeffect(speed_mod, terms = c("season", "habitat")))
+plot(ggeffect(speed_mod, term = "GroupSize_z"))
+plot(ggeffect(speed_mod, term = "PupPresence"))
+plot(ggeffect(speed_mod, term = c("PupPresence", "season")))
+plot(ggeffect(speed_mod, term = "TimeForaging_z"))
+plot(ggeffect(speed_mod, term = "breedingyear"))
+
+# compare to the Gamma model responses
+#plot(ggeffect(speed_mod_gamma, term = "habitat"))
+#plot(ggeffect(speed_mod_gamma, term = "season"))
+#plot(ggeffect(speed_mod_gamma, terms = c("season", "habitat")))
+#plot(ggeffect(speed_mod_gamma, term = "GroupSize_z"))
+#plot(ggeffect(speed_mod_gamma, term = "PupPresence"))
+#plot(ggeffect(speed_mod_gamma, term = c("PupPresence", "season")))
+#plot(ggeffect(speed_mod_gamma, term = "TimeForaging_z"))
+#plot(ggeffect(speed_mod_gamma, term = "breedingyear"))
 
 # Plotting habitat type by season
 p_habitatseason <- data.frame(ggeffect(speed_mod, terms = c("season", "habitat")))
@@ -134,10 +147,12 @@ p_habitatseason <- ggplot(data = p_habitatseason,
         axis.text.y = element_text(colour = "black", size = 9.5),
         axis.title = element_text(colour = "black", size = 10.5), 
         legend.text = element_text(size = 9.5), 
-        legend.title = element_text(hjust = 0.5)) + 
+        legend.title = element_text(hjust = 0.5), 
+        plot.tag.position = c(0, 1),   
+        plot.tag = element_text(hjust = 0, vjust = 1)) + 
   scale_colour_manual(values = c("chocolate", "sandybrown", "burlywood", "forestgreen")) +
   scale_fill_manual(values = c("chocolate", "sandybrown", "burlywood", "forestgreen")) +
-  labs(fill = "Habitat", x = NULL, y =  "Movement speed (m/hr)") + 
+  labs(fill = "Habitat", x = NULL, y =  "Movement speed (m/hr)", tag = "(c)") + 
   scale_y_continuous(breaks = seq(150, 255, 15), 
                      labels = c("150", "", "180", "", "210", "", "240", "")) + 
   coord_cartesian(ylim = c(150, 260)) 
@@ -171,7 +186,9 @@ p1a <- ggplot(p1a_dat, aes(x = GroupSize, y = predicted)) +
   geom_ribbon(aes(ymin = conf.low, ymax = conf.high), alpha = 0.1, colour = NA) + 
   geom_line(linewidth = 0.6) + 
   plot_theme + 
-  labs(x = "Group size", y =  "Movement speed (m/hr)", tag = "A") + 
+  theme(plot.tag.position = c(0, 1),   
+        plot.tag = element_text(hjust = 0, vjust = 1)) +
+  labs(x = "Group size", y =  "Movement speed (m/hr)", tag = "(a)") + 
   scale_y_continuous(breaks = seq(150, 300, 15), 
                      labels = c("150", "", "180", "", "210", "", "240", "", "270", "", "300"), 
                      limits = c(150, 300))
@@ -195,8 +212,10 @@ p1b <- ggplot(p1b_dat, aes(x = PupPresence, y = predicted, group = season, fill 
   theme(axis.text.x = element_text(size = 9), 
         legend.position = c(0.8, 0.8), 
         legend.box.background = element_rect(color = "black", linewidth = 0.5), 
-        legend.margin = margin(2, 4, 2, 4)) +
-  labs(x = "Pup presence", y =  "Movement speed (m/hr)", tag = "B", fill = NULL) + 
+        legend.margin = margin(2, 4, 2, 4), 
+        plot.tag.position = c(0, 1),   
+        plot.tag = element_text(hjust = 0, vjust = 1)) +
+  labs(x = "Pup presence", y =  "Movement speed (m/hr)", tag = "(b)", fill = NULL) + 
   scale_y_continuous(breaks = seq(150, 300, 15), 
                      labels = c("150", "", "180", "", "210", "", "240", "", "270", "", "300"), 
                      limits = c(150, 300)) +
@@ -214,7 +233,9 @@ p1c <- ggplot(p1c_dat, aes(x = TimeForaging, y = predicted)) +
   geom_ribbon(aes(ymin = conf.low, ymax = conf.high), alpha = 0.1, colour = NA) + 
   geom_line(linewidth = 0.6) + 
   plot_theme + 
-  labs(x = "Hours of foraging", y =  "Movement speed (m/hr)", tag = "C") + 
+  theme(plot.tag.position = c(0, 1),   
+        plot.tag = element_text(hjust = 0, vjust = 1)) +
+  labs(x = "Hours of foraging", y =  "Movement speed (m/hr)", tag = "(c)") + 
   scale_y_continuous(breaks = seq(150, 300, 15), 
                      labels = c("150", "", "180", "", "210", "", "240", "", "270", "", "300"), 
                      limits = c(150, 300))
@@ -230,8 +251,10 @@ p1d <- ggplot(p1d_dat, aes(x = breedingyear, y = predicted)) +
   geom_errorbar(aes(ymin = conf.low, ymax = conf.high), width = 0, linewidth = 0.8) + 
   geom_point(shape = 21, fill = "white", colour = "black", size = 2.5, stroke = 0.8) + 
   plot_theme + 
-  theme(axis.text.x = element_text(size = 9, angle = 90, vjust = 0.5)) +
-  labs(x = "Breeding season", y =  "Movement speed (m/hr)", tag = "D") + 
+  theme(axis.text.x = element_text(size = 9, angle = 90, vjust = 0.5), 
+        plot.tag.position = c(0, 1),   
+        plot.tag = element_text(hjust = 0, vjust = 1)) +
+  labs(x = "Breeding season", y =  "Movement speed (m/hr)", tag = "(d)") + 
   scale_y_continuous(breaks = seq(150, 300, 15), 
                      labels = c("150", "", "180", "", "210", "", "240", "", "270", "", "300"), 
                      limits = c(141, 300))
@@ -243,7 +266,8 @@ layout_matrix <- "AB
 p1_final <- p1c + p1a + p1b + plot_spacer() + p1d +
   plot_layout(design = layout_matrix)
 #saveRDS(p1_final, "plot_movespeed_other.RDS")
-
+#ggsave("FigureS6.pdf", p1_final, device = "pdf", units = "in", width = 5.8, height = 8.25, dpi = 450)
+#ggsave("FigureS6.png", p1_final, device = "png", units = "in", width = 5.8, height = 8.25, dpi = 450)
 
 #--------------------------------
 # Modelling track length  
@@ -299,7 +323,7 @@ tracklength_mod <- lme(tracklength ~ burrow_habitat*season +
                        random = list(GroupName = ~1), 
                        correlation = corCAR1(form = ~ timeindex | GroupName),
                        data = tracklength_df)
-#hist(residuals(tracklength_mod, type = "normalized"))
+hist(residuals(tracklength_mod, type = "normalized"))
 summary(tracklength_mod)
 
 #plot(ggeffect(tracklength_mod, terms = c("season", "burrow_habitat")))
@@ -344,14 +368,16 @@ p_habitatseason2 <- ggplot(data = p_habitatseason2,
         axis.text.y = element_text(colour = "black", size = 9.5),
         axis.title = element_text(colour = "black", size = 10.5), 
         legend.text = element_text(size = 9.5), 
-        legend.title = element_text(hjust = 0.5)) + 
+        legend.title = element_text(hjust = 0.5), 
+        plot.tag.position = c(0, 1),   
+        plot.tag = element_text(hjust = 0, vjust = 1)) + 
   scale_colour_manual(values = c("chocolate", "sandybrown", "burlywood", "forestgreen")) +
   scale_fill_manual(values = c("chocolate", "sandybrown", "burlywood", "forestgreen")) +
-  labs(fill = "Habitat", x = NULL, y =  "Morning track length\n(metres)") + 
+  labs(fill = "Habitat", x = NULL, y =  "Morning track length\n(metres)", tag = "(d)") + 
   scale_y_continuous(breaks = seq(450, 700, 50), 
                      labels = c("", 500, "", 600, "", 700)) + 
   coord_cartesian(ylim = c(450, 700)) 
-#saveRDS(p_habitatseason2, "plot_track_lengthength_habitat.RDS")
+#saveRDS(p_habitatseason2, "plot_track_length_habitat.RDS")
 
 # Plot the other variables
 #p2 <- plot(ggeffect(tracklength_mod, terms = c("season", "burrow_habitat")))
@@ -376,7 +402,9 @@ p2a <- ggplot(p2a_dat, aes(x = GroupSize, y = predicted)) +
   geom_ribbon(aes(ymin = conf.low, ymax = conf.high), alpha = 0.1, colour = NA) + 
   geom_line(linewidth = 0.6) + 
   plot_theme + 
-  labs(x = "Group size", y =  "Morning track length\n(metres)", tag = "A") + 
+  theme(plot.tag.position = c(0, 1),   
+        plot.tag = element_text(hjust = 0, vjust = 1)) +
+  labs(x = "Group size", y =  "Morning track length\n(metres)", tag = "(a)") + 
   scale_y_continuous(breaks = seq(450, 750, 50), 
                      labels = c("", 500, "", 600, "", 700 ,""), 
                      limits = c(400, 770)) + 
@@ -401,8 +429,10 @@ p2b <- ggplot(p2b_dat, aes(x = PupPresence, y = predicted, group = season, fill 
   theme(axis.text.x = element_text(size = 9), 
         legend.position = c(0.82, 0.86), 
         legend.box.background = element_rect(color = "black", linewidth = 0.5), 
-        legend.margin = margin(2, 4, 2, 4)) +
-  labs(x = "Pup presence", y =  "Morning track length\n(metres)", tag = "B", fill = NULL) + 
+        legend.margin = margin(2, 4, 2, 4), 
+        plot.tag.position = c(0, 1),   
+        plot.tag = element_text(hjust = 0, vjust = 1)) +
+  labs(x = "Pup presence", y =  "Morning track length\n(metres)", tag = "(b)", fill = NULL) + 
   scale_y_continuous(breaks = seq(450, 750, 50), 
                      labels = c("", 500, "", 600, "", 700 ,""), 
                      limits = c(400, 770)) + 
@@ -419,8 +449,10 @@ p2c <- ggplot(p2c_dat, aes(x = breedingyear, y = predicted)) +
   geom_errorbar(aes(ymin = conf.low, ymax = conf.high), width = 0, linewidth = 0.8) + 
   geom_point(shape = 21, fill = "white", colour = "black", size = 2.5, stroke = 0.8) + 
   plot_theme + 
-  theme(axis.text.x = element_text(size = 9, angle = 90, vjust = 0.5)) +
-  labs(x = "Breeding season", y =  "Morning track length\n(metres)", tag = "C") + 
+  theme(axis.text.x = element_text(size = 9, angle = 90, vjust = 0.5), 
+        plot.tag.position = c(0, 1),   
+        plot.tag = element_text(hjust = 0, vjust = 1)) +
+  labs(x = "Breeding season", y =  "Morning track length\n(metres)", tag = "(c)") + 
   scale_y_continuous(breaks = seq(450, 750, 50), 
                      labels = c("", 500, "", 600, "", 700 ,""), 
                      limits = c(400, 770)) 
@@ -431,5 +463,7 @@ layout_matrix <- "AB
 p2_final <- p2a + p2b + p2c +
   plot_layout(design = layout_matrix)
 #saveRDS(p2_final, "plot_tracklength_other.RDS")
+#ggsave("FigureS7.pdf", p2_final, device = "pdf", units = "in", width = 5.8, height = 6.25, dpi = 450)
+#ggsave("FigureS7.png", p2_final, device = "png", units = "in", width = 5.8, height = 6.25, dpi = 450)
 
 #########################  END OF SCRIPT ######################################

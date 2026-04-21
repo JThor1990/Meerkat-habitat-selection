@@ -7,7 +7,7 @@
 
 ########################################################
 
-setwd("C:/Users/Jack/OneDrive/Documents/Kalahari/Cambridge LARG/Cambridge PostDoc2/Meerkat/Meerkat habitat selection/Final Github scripts/")
+setwd("INSERT FILE PATH")
 
 # load in the packages
 lapply(c("emmeans", "ggeffects", "lubridate", "nlme", "patchwork", "tidyverse"), FUN = library, character.only = TRUE)
@@ -44,7 +44,7 @@ summary(mwg_mod)
 # Check for any residual spatial autocorrelation here
 # Can only do this using the burrow latitude and longitude filter but I want the full data set afterwards
 # Also worth checking if there is any outstanding spatial structure in the residuals
-# we'll randomly some of the data as it very large and computationally expensive on full dataset
+# we'll randomly sample some of the data as it very large and computationally expensive on full dataset
 #resid_df <- mutate(df1, resid = resid(mwg_mod))
 #resid_df <- st_as_sf(resid_df, coords = c("BurrowLatitude", "BurrowLongitude"), crs = 4326)
 #resid_df <- st_transform(resid_df, 32734) 
@@ -56,7 +56,7 @@ summary(mwg_mod)
 #moran.test(resid_sample$resid, listw)
 #Moran's I very close to 0 → very weak spatial autocorrelation remaining so will carry on without modelling spatial structure directly
 
-# Extract the meginal means to compare the habitat contrasts per season
+# Extract the marginal means to compare the habitat contrasts per season
 plot(emmeans(mwg_mod, ~ habitat + season)) # will be similar to marginal effect
 mwg_contrast <- emmeans(mwg_mod, pairwise ~ habitat, by="season")
 mwg_contrast <- data.frame(mwg_contrast$contrasts) %>%
@@ -140,7 +140,9 @@ p1a <- ggplot(p1a_dat, aes(x = GroupSize, y = predicted)) +
   geom_ribbon(aes(ymin = conf.low, ymax = conf.high), alpha = 0.1, colour = NA) + 
   geom_line(linewidth = 0.6) + 
   plot_theme + 
-  labs(x = "Group size", y = "Rate of morning\nweight gain (g/hr)", tag = "A") + 
+  theme(plot.tag.position = c(0, 1),   
+        plot.tag = element_text(hjust = 0, vjust = 1)) +
+  labs(x = "Group size", y = "Rate of morning\nweight gain (g/hr)", tag = "(a)") + 
   scale_y_continuous(breaks = seq(4, 9, 0.5), 
                      labels = c(4, "", 5, "", 6, "", 7, "", 8, "", 9), 
                      limits = c(4, 9))
@@ -164,8 +166,10 @@ p1b <- ggplot(p1b_dat, aes(x = PupPresence, y = predicted, group = season, fill 
   theme(axis.text.x = element_text(size = 9), 
         legend.position = c(0.8, 0.85), 
         legend.box.background = element_rect(color = "black", linewidth = 0.5), 
-        legend.margin = margin(2, 4, 2, 4)) +
-  labs(x = "Pup presence", y = "Rate of morning\nweight gain (g/hr)", tag = "B", fill = NULL) + 
+        legend.margin = margin(2, 4, 2, 4), 
+        plot.tag.position = c(0, 1),   
+        plot.tag = element_text(hjust = 0, vjust = 1)) +
+  labs(x = "Pup presence", y = "Rate of morning\nweight gain (g/hr)", tag = "(b)", fill = NULL) + 
   scale_y_continuous(breaks = seq(4, 9.5, 0.5), 
                      labels = c(4, "", 5, "", 6, "", 7, "", 8, "", 9, ""), 
                      limits = c(4, 9.5)) +
@@ -184,7 +188,9 @@ p1c <- ggplot(p1c_dat, aes(x = Age, y = predicted)) +
   geom_ribbon(aes(ymin = conf.low, ymax = conf.high), alpha = 0.1, colour = NA) + 
   geom_line(linewidth = 0.6) + 
   plot_theme + 
-  labs(x = "Age (years)", y = "Rate of morning\nweight gain (g/hr)", tag = "C") + 
+  theme(plot.tag.position = c(0, 1),   
+        plot.tag = element_text(hjust = 0, vjust = 1)) +
+  labs(x = "Age (years)", y = "Rate of morning\nweight gain (g/hr)", tag = "(c)") + 
   scale_y_continuous(breaks = seq(4, 9, 0.5), 
                      labels = c(4, "", 5, "", 6, "", 7, "", 8, "", 9), 
                      limits = c(4, 9)) + 
@@ -198,11 +204,12 @@ p1d <- ggplot(p1d_dat, aes(x = x, y = predicted)) +
   geom_errorbar(aes(ymin = conf.low, ymax = conf.high), width = 0, linewidth = 0.8) + 
   geom_point(shape = 21, fill = "white", colour = "black", size = 2.5, stroke = 0.8) + 
   plot_theme + 
-  labs(x = "Sex", y = "Rate of morning\nweight gain (g/hr)", tag = "D") + 
+  theme(plot.tag.position = c(0, 1),   
+        plot.tag = element_text(hjust = 0, vjust = 1)) +
+  labs(x = "Sex", y = "Rate of morning\nweight gain (g/hr)", tag = "(d)") + 
   scale_y_continuous(breaks = seq(4, 9, 0.5), 
                      labels = c(4, "", 5, "", 6, "", 7, "", 8, "", 9), 
                      limits = c(4, 9)) 
-
 
 # Breeding season
 p1e_dat <- data.frame(ggeffect(mwg_mod, terms = "breedingyear")) %>% 
@@ -211,12 +218,12 @@ p1e_dat <- data.frame(ggeffect(mwg_mod, terms = "breedingyear")) %>%
          conf.low = conf.low, 
          conf.high = conf.high)
 
-p1e <- ggplot(p1d_dat, aes(x = breedingyear, y = predicted)) + 
+p1e <- ggplot(p1e_dat, aes(x = breedingyear, y = predicted)) + 
   geom_errorbar(aes(ymin = conf.low, ymax = conf.high), width = 0, linewidth = 0.8) + 
   geom_point(shape = 21, fill = "white", colour = "black", size = 2.5, stroke = 0.8) + 
   plot_theme + 
   theme(axis.text.x = element_text(size = 9, angle = 90, vjust = 0.5)) +
-  labs(x = "Breeding season", y = "Rate of morning\nweight gain (g/hr)", tag = "D", fill = NULL) + 
+  labs(x = "Breeding season", y = "Rate of morning\nweight gain (g/hr)", tag = "(e)", fill = NULL) + 
   scale_y_continuous(breaks = seq(4, 9.5, 0.5), 
                      labels = c(4, "", 5, "", 6, "", 7, "", 8, "", 9, ""), 
                      limits = c(4, 9.5))
@@ -228,5 +235,7 @@ layout_matrix <- "AB
 p1_final <- p1a + p1b + p1c + p1d + p1e +
   plot_layout(design = layout_matrix)
 #saveRDS(p1_final, "plot_mwg_other.RDS")
+#ggsave("FigureS5.pdf", p1_final, device = "pdf", units = "in", width = 5.8, height = 8.25, dpi = 450)
+#ggsave("FigureS5.png", p1_final, device = "png", units = "in", width = 5.8, height = 8.25, dpi = 450)
 
 ########################### END OF SCRIPT #####################################

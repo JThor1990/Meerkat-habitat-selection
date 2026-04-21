@@ -7,7 +7,7 @@
 
 ########################################################
 
-setwd("C:/Users/Jack/OneDrive/Documents/Kalahari/Cambridge LARG/Cambridge PostDoc2/Meerkat/Meerkat habitat selection/Final Github scripts/")
+setwd("INSERT FILE PATH")
 
 library(patchwork) ; library(ggplot2)
 
@@ -25,10 +25,11 @@ p1d <- readRDS("Plots/plot_RSFforaging_season.RDS")
 
 # finalise the first
 p1a <- p1a + theme(legend.position = "right") 
+
 p1b <- p1b + theme(axis.text = element_text(colour = "black")) 
 # update the tags on 1c and 1d
-p1c <- p1c + labs(tag = "C")
-p1d <- p1d + labs(tag = "D")
+p1c <- p1c + labs(tag = "(c)", subtitle = NULL) 
+p1d <- p1d + labs(tag = "(d)", subtitle = NULL)
 
 p1_upper <- (p1a + p1b)
 p1_lower <- (p1c/p1d)
@@ -50,7 +51,7 @@ p_burrow <- readRDS("Plots/plot_burrowswitching_habitat.RDS")
 p_burrow <- p_burrow + 
   labs(x = NULL, 
        y = "\nProbability of burrow switch", 
-       tag = "A") + 
+       tag = "(a)") + 
   theme(legend.position = "none", 
         axis.text.x = element_text(size = 9), 
         axis.text.y = element_text(size = 10)) 
@@ -69,9 +70,8 @@ p_burrow <- p_burrow +
 p_weightgain <- readRDS("Plots/plot_mwg_habitat.RDS")
 
 p_weightgain <- p_weightgain + 
-  labs(x = NULL, tag = "B") + 
-  theme(#legend.position = "none", 
-        axis.text.x = element_text(size = 9), 
+  labs(x = NULL, tag = "(b)") + 
+  theme(axis.text.x = element_text(size = 9), 
         axis.text.y = element_text(size = 10))
 
 p_weightgain <- p_weightgain + 
@@ -96,7 +96,7 @@ p_speed <- p_speed +
   labs(x = NULL, 
        y = "Movement speed\n(metres/hr)",
        colour = NULL, 
-       tag = "C") + 
+       tag = "(c)") + 
   theme(legend.position = "none", 
     axis.text.x = element_text(size = 9), 
     axis.text.y = element_text(size = 10))
@@ -123,7 +123,7 @@ p_tracklength <- p_tracklength +
   labs(x = NULL, 
        y = "Morning track length\n(metres)",
        colour = NULL, 
-       tag = "D") + 
+       tag = "(d)") + 
   theme(legend.position = "none", 
     axis.text.x = element_text(size = 9), 
     axis.text.y = element_text(size = 10))

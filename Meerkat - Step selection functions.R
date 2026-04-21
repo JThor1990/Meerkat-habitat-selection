@@ -3,11 +3,11 @@
 # R SCRIPT
 # THE BIND OF THE BURROW: HABITAT SELECTION BY MEERKATS
 # STEP SELECTION ANALYSIS (HABITAT SELECTION AT LOCAL SCALE) 
-# Author: Jack Thorley (jackthorley1@gmail.com) 
+# Author: Jack Thorley (jackthorley1@gmail.com) & Christopher Duncan 
 
 ########################################################
 
-setwd("C:/Users/Jack/OneDrive/Documents/Kalahari/Cambridge LARG/Cambridge PostDoc2/Meerkat/Meerkat habitat selection/Final Github scripts/")
+setwd("INSERT FILE PATH")
 
 # load the packages
 lapply(c("adehabitatLT", "amt", "emmeans", "geosphere", "ggplot2", "glmmTMB", "job", "lubridate", "patchwork", "sf", "terra", "tidyverse", "broom.mixed"), FUN = library, character.only = TRUE)
@@ -25,9 +25,9 @@ d <- paste0("Habitat map/habClPanRiver.shp")  # Habitat Map
 
 # Rework some of the variables:
 tracks_df <- tracks_df %>% 
-  mutate(Date = ymd(Date), 
-         BurrowLeaveTime = ymd_hms(BurrowLeaveTime), 
-         Time = as.POSIXct(Time)) 
+  mutate(Date = dmy(Date), 
+         BurrowLeaveTime = dmy_hms(BurrowLeaveTime), 
+         Time = dmy_hms(Time)) 
   
 # Look at the track data before interpolation
 length(unique(tracks_df$SessionID)) # for main text need this after interpolating
@@ -66,7 +66,7 @@ tracks_df <- tracks_df %>%
     mutate(Easting = st_coordinates(.)[, 1],  
            Northing = st_coordinates(.)[, 2])  %>%
     st_drop_geometry()  %>% 
-    dplyr::select(-habitat, -PixelID, -Distance_lead, -TimeDiff_lead, -Speed) %>% 
+    dplyr::select(-habitat, -Distance_lead, -TimeDiff_lead, -Speed) %>% 
   # also provide an additional unique identifier for the track 
     arrange(Date) %>% 
     group_by(SessionID) %>% 
@@ -226,8 +226,8 @@ alltracks_df <- alltracks_df %>%
 #---------------------------------------------
 
 alltracks_df <- readRDS("df_SSA_data.rds")
-# mkat_ssf_mod1 <- readRDS("model_SSA_dry.rds")
-# mkat_ssf_mod2 <- readRDS("model_SSA_wet.rds")
+#mkat_ssf_mod1 <- readRDS("model_SSA_dry.rds")
+#mkat_ssf_mod2 <- readRDS("model_SSA_wet.rds")
 
 # get the relevant information about the tracks used for SSF
 length(unique(alltracks_df$TrackID)) ; 
@@ -339,14 +339,18 @@ p1 <- ggplot(filter(fixef_habitat, habitat != "Drie doring"), aes(x = habitat, y
   geom_point(size = 4.5, aes(colour = habitat)) +
   geom_point(size = 4.5, shape = 1, colour = "black") +
   facet_wrap(~season) +
-  labs(y = expression("Selection intensity " ~ (italic(e)^{italic(beta)[hab]}))) +
+  labs(y = expression("Selection intensity " ~ (italic(e)^{italic(beta)[hab]})), 
+       tag= "(a)") +
   theme_bw() + 
   theme(legend.position = "none", 
         axis.title.x = element_blank(), 
         axis.title.y = element_text(size = 11),
         axis.text = element_text(colour = "black", size = 9.5), 
         panel.grid = element_blank(), 
-        strip.text = element_text(size = 11)) +
+        strip.text = element_text(size = 11), 
+        strip.background = element_blank(), 
+        plot.tag.position = c(0, 1),   
+        plot.tag = element_text(hjust = 0, vjust = 1)) +
   scale_colour_manual(values = c("chocolate", "sandybrown", "burlywood")) +   
   scale_y_continuous(breaks = seq(0.5, 1.5, 0.1), 
                      labels = c("", 0.6, "", 0.8,  0.9, 1, 1.1, 1.2, 1.3, 1.4, ""))
@@ -398,17 +402,22 @@ p2 <- ggplot(ranef_habitat) +
              aes(x = habitat, y = exp(fe_estimate), colour = habitat), size = 4.5, 
              shape = 1, alpha = 0.6, colour = "black") +
   facet_wrap(~season) +
-  labs(y = expression("Selection intensity " ~ (italic(e)^{italic(beta)[hab]}))) +
+  labs(y = expression("Selection intensity " ~ (italic(e)^{italic(beta)[hab]})), 
+       tag = "(b)") +
   theme_bw() + 
   theme(legend.position = "none", 
         axis.title.x = element_blank(), 
         axis.title.y = element_text(size = 11),
         axis.text = element_text(colour = "black", size = 9.5), 
         panel.grid = element_blank(), 
-        strip.text = element_text(size = 11)) +
+        strip.text = element_text(size = 11),
+        strip.background = element_blank(),
+        plot.tag.position = c(0, 1),   
+        plot.tag = element_text(hjust = 0, vjust = 1)) +
   scale_colour_manual(values = c("chocolate", "sandybrown", "burlywood")) + 
-  scale_y_continuous(breaks = seq(0.5, 1.5, 0.1), 
-                     labels = c("", 0.6, "", 0.8,  "", 1, "", 1.2, "",1.4, ""))
+  scale_y_continuous(breaks = seq(0.5, 2, 0.1), 
+                     labels = c("", 0.6, "", 0.8,  "", 1, "", 1.2, "",1.4, "", 
+                                1.6, "", 1.8, "", 2.0))
 p2 
 
 #---------------------
@@ -499,9 +508,8 @@ habitat_contrasts_wet <- data.frame(pairs(habitat_means_wet, adjust = "tukey")) 
 #--------------------------------------------------------
 
 # Population-level effects (5.25in x 8in)
-p1_final <- p1 + labs(tag = "A")
-p2_final <- p2 + labs(tag = "B")
-p_final <- p1_final/p2_final
-
+p_final <- p1/p2
+#ggsave("FigureS3.pdf", p_final, device="pdf", dpi = 450, units="in", height = 6.25, width = 5.5)
+#ggsave("FigureS3.png", p_final, device="png", dpi = 450, units="in", height = 6.25, width = 5.5)
 
 ###################### END OF SCRIPT ###################

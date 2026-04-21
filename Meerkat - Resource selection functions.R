@@ -7,7 +7,7 @@
 
 ########################################################
 
-setwd("C:/Users/Jack/OneDrive/Documents/Kalahari/Cambridge LARG/Cambridge PostDoc2/Meerkat/Meerkat habitat selection/Final Github scripts/")
+setwd("INSERT FILE PATH")
 
 # load the packages
 lapply(c("terra", "tidyverse", "emmeans", "ggplot2", "sf", "sdmTMB", "fmesher", "patchwork"), 
@@ -41,7 +41,8 @@ modDF <- add_utm_columns(modDF,c("GPS_Longitude","GPS_Latitude"), units="km")
 modDF <- modDF %>%
   mutate(month = month(Date),
          year = year(Date),
-         GroupRef = GroupRef) %>%
+         GroupRef = GroupRef, 
+         Time = as.POSIXct(Time, format = "%d/%m/%Y %H:%M")) %>%
   mutate(breedingyear = case_when(Date >= as.Date(paste0(year,"-10-01")) ~ paste0(year,"/",year+1),
                                   Date < as.Date(paste0(year,"-10-01")) ~ paste0(year-1,"/",year)),
          season = if_else(month(Date)%in%c(10,11,12,1,2,3,4), "Oct-Apr", "May-Sep")) %>%
@@ -53,7 +54,8 @@ modDF <- modDF %>%
 # Assign within session ID to track points
 modDF <- modDF %>% 
   ungroup() %>% 
-  group_by(SessionID) %>% arrange(Time) %>% 
+  group_by(SessionID) %>% 
+  arrange(Time) %>% 
   mutate(PointOrder = row_number(),
          ForTime = difftime(Time,min(Time), units="mins"))
 
@@ -76,6 +78,7 @@ p <- ggplot(filter(modDF, ForTime <= 180)) +
         axis.title = element_text(size = 11),
         axis.text = element_text(colour = "black", size = 9.5), 
         panel.grid = element_blank(), 
+        strip.background = element_blank(),
         strip.text = element_text(size = 10)) + 
   labs(x = "Foraging time (minutes)", 
        y = "Proportion")
@@ -268,7 +271,7 @@ plot1 <- ggplot(filter(Contrasts_Burrow, Group1 == "Drie Doring"), aes(x = Group
   geom_point(size = 3.5, aes(fill = Group2), shape=21,stroke= 0.5) +
   facet_wrap(~season, ncol=2) +
   labs(y = expression("Selection intensity " ~ (italic(e)^{italic(beta)[hab]})), 
-       tag = "C",
+       tag = "(c)",
        subtitle = "Landscape-scale: burrow habitat selection") +
   theme_bw() +
   theme(legend.position = "none", 
@@ -277,7 +280,10 @@ plot1 <- ggplot(filter(Contrasts_Burrow, Group1 == "Drie Doring"), aes(x = Group
         axis.text.x = element_text(colour = "black", size = 9), 
         axis.text.y = element_text(colour = "black", size = 9.5),
         panel.grid = element_blank(), 
-        strip.text = element_text(size = 11)) +
+        strip.text = element_text(size = 11), 
+        strip.background = element_blank(), 
+        plot.tag.position = c(0, 1),   
+        plot.tag = element_text(hjust = 0, vjust = 1)) +
   scale_colour_manual(values = c("chocolate", "sandybrown", "burlywood")) +
   scale_fill_manual(values = c("chocolate", "sandybrown", "burlywood"))
 plot1
@@ -294,12 +300,12 @@ burrow_availability <- filter(modDF_Burrow, Present == 0) %>%
 burrow_means <- left_join(burrow_means, burrow_availability) %>% 
   group_by(season) %>% 
   # calculate probability of use 
-  mutate(weighted_intensity = selection_intensity * availability,  # Multiply selection intensity by availability
-         total_weighted_intensity = sum(weighted_intensity),             # Compute total sum
+  mutate(relative_availabilty = availability/sum(availability)*100, 
+         weighted_intensity = selection_intensity * availability,  # Multiply selection intensity by availability
+         total_weighted_intensity = sum(weighted_intensity),       # Compute total sum
          probability_of_use = (weighted_intensity / total_weighted_intensity)*100) %>%  # Normalize to sum to 1
   data.frame()
 # (will be slightly different from MS because it depends on where random points were sampled)
-
 
 #-------------------------------------------------------------------------------
 # Fit the foraging area site resource selection function 
@@ -414,7 +420,7 @@ plot2 <- ggplot(Contrasts_Forage %>% filter(Group1 == "Drie Doring"),
   #geom_point(size = 3.5, aes(colour = Group2), shape=4,stroke= 2) +
   facet_wrap(~season, ncol=2) +
   labs(y = expression("Selection intensity " ~ (italic(e)^{italic(beta)[hab]})), 
-       tag = "D",
+       tag = "(d)",
        subtitle = "Landscape-scale: foraging area selection") +
   theme_bw() +
   theme(legend.position = "none", 
@@ -423,7 +429,10 @@ plot2 <- ggplot(Contrasts_Forage %>% filter(Group1 == "Drie Doring"),
         axis.text.x = element_text(colour = "black", size = 9), 
         axis.text.y = element_text(colour = "black", size = 9.5),
         panel.grid = element_blank(), 
-        strip.text = element_text(size = 11)) +
+        strip.text = element_text(size = 11), 
+        strip.background = element_blank(), 
+        plot.tag.position = c(0, 1),   
+        plot.tag = element_text(hjust = 0, vjust = 1)) +
   scale_colour_manual(values = c("chocolate", "sandybrown", "burlywood")) +
   scale_fill_manual(values = c("chocolate", "sandybrown", "burlywood"))
   
@@ -439,7 +448,8 @@ forage_availability <- filter(modDF_Forage, Present == 0) %>%
 forage_means <- left_join(forage_means, forage_availability) %>% 
   group_by(season) %>% 
   # calculate probability of use 
-  mutate(weighted_intensity = selection_intensity * availability,  # Multiply selection intensity by availability
+  mutate(relative_availabilty = availability/sum(availability)*100,, 
+         weighted_intensity = selection_intensity * availability,  # Multiply selection intensity by availability
          total_weighted_intensity = sum(weighted_intensity),             # Compute total sum
          probability_of_use = (weighted_intensity / total_weighted_intensity)*100) %>%  # Normalize to sum to 1
   data.frame()

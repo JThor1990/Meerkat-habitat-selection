@@ -7,7 +7,7 @@
 
 ########################################################
 
-setwd("C:/Users/Jack/OneDrive/Documents/Kalahari/Cambridge LARG/Cambridge PostDoc2/Meerkat/Meerkat habitat selection/Final Github scripts/")
+setwd("INSERT FILE PATH")
 
 # load in the packages
 lapply(c("tidyverse", "nlme", "glmmTMB", "ggeffects", "patchwork", "emmeans"), FUN = library, character.only = TRUE)
@@ -122,7 +122,7 @@ p_habitatseason <- ggplot(data = p_habitatseason,
         legend.title = element_text(hjust = 0.5)) + 
   scale_colour_manual(values = c("chocolate", "sandybrown", "burlywood", "forestgreen")) +
   scale_fill_manual(values = c("chocolate", "sandybrown", "burlywood", "forestgreen")) +
-  labs(fill = "Habitat", x = NULL, y =  "Probabilty of burrow switch") + 
+  labs(fill = "Habitat", x = NULL, y =  "Probability of burrow switch") + 
   scale_y_continuous(breaks = seq(0.2, 0.5, 0.05), 
                      labels = c(0.2, "", 0.3, "", 0.4, "", 0.5)) + 
   coord_cartesian(ylim = c(0.2, 0.5)) 
@@ -151,7 +151,9 @@ p1a <- ggplot(p1a_dat, aes(x = GroupSize, y = predicted)) +
   geom_ribbon(aes(ymin = conf.low, ymax = conf.high), alpha = 0.1, colour = NA) + 
   geom_line(linewidth = 0.6) + 
   plot_theme + 
-  labs(x = "Group size", y =  "Probability of burrow switch", tag = "A") + 
+  theme(plot.tag.position = c(0, 1),   
+        plot.tag = element_text(hjust = 0, vjust = 1)) +
+  labs(x = "Group size", y =  "Probability of burrow switch", tag = "(a)") + 
   scale_y_continuous(breaks = seq(0.1, 0.5, 0.05), 
                      labels = c(0.1, "", 0.2, "", 0.3, "", 0.4, "", 0.5)) + 
   coord_cartesian(ylim = c(0.1, 0.52)) 
@@ -175,9 +177,11 @@ p1b <- ggplot(p1b_dat, aes(x = PupPresence, y = predicted, group = season, fill 
   theme(axis.text.x = element_text(size = 9), 
         legend.position = c(0.8, 0.2), 
         legend.box.background = element_rect(color = "black", linewidth = 0.5), 
-        legend.margin = margin(2, 4, 2, 4)) +
+        legend.margin = margin(2, 4, 2, 4), 
+        plot.tag.position = c(0, 1),   
+        plot.tag = element_text(hjust = 0, vjust = 1)) +
   labs(x = "Pup presence", y = "Probability of burrow switch", 
-       tag = "B", fill = NULL) + 
+       tag = "(b)", fill = NULL) + 
   scale_y_continuous(breaks = seq(0.1, 0.5, 0.05), 
                      labels = c(0.1, "", 0.2, "", 0.3, "", 0.4, "", 0.5)) + 
   coord_cartesian(ylim = c(0.1, 0.52)) +
@@ -191,8 +195,10 @@ p1c <- ggplot(p1c_dat, aes(x = breedingseason, y = predicted)) +
   geom_errorbar(aes(ymin = conf.low, ymax = conf.high), width = 0, linewidth = 0.8) + 
   geom_point(shape = 21, fill = "white", colour = "black", size = 2.5, stroke = 0.8) + 
   plot_theme + 
-  theme(axis.text.x = element_text(size = 9, angle = 90, vjust = 0.5)) +
-  labs(x = "Breeding season", y =  "Probability of burrow switch", tag = "C") + 
+  theme(axis.text.x = element_text(size = 9, angle = 90, vjust = 0.5), 
+        plot.tag.position = c(0, 1),   
+        plot.tag = element_text(hjust = 0, vjust = 1)) +
+  labs(x = "Breeding season", y =  "Probability of burrow switch", tag = "(c)") + 
   scale_y_continuous(breaks = seq(0.1, 0.5, 0.05), 
                      labels = c(0.1, "", 0.2, "", 0.3, "", 0.4, "", 0.5)) + 
   coord_cartesian(ylim = c(0.1, 0.55)) 
@@ -203,5 +209,7 @@ layout_matrix <- "AB
 p1_final <- p1a + p1b + p1c + 
   plot_layout(design = layout_matrix)
 #saveRDS(p1_final, "plot_burrowswitching_other.RDS")
+#ggsave("FigureS4.pdf", p1_final, device = "pdf", units = "in", width = 5.8, height = 6.7, dpi = 450)
+#ggsave("FigureS4.png", p1_final, device = "png", units = "in", width = 5.8, height = 6.7, dpi = 450)
 
 ########################## END OF SCRIPT ######################################

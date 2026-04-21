@@ -7,7 +7,7 @@
 
 ########################################################
 
-setwd("C:/Users/Jack/OneDrive/Documents/Kalahari/Cambridge LARG/Cambridge PostDoc2/Meerkat/Meerkat habitat selection/Final Github scripts/")
+setwd("INSERT PATH")
 
 # Load packages 
 lapply(c("tidyverse", "lubridate", "nlme", "ggeffects", "emmeans", "DHARMa", "patchwork"), 

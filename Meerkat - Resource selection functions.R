@@ -14,7 +14,8 @@ lapply(c("terra", "tidyverse", "emmeans", "ggplot2", "sf", "sdmTMB", "fmesher", 
        FUN = library, character.only = TRUE)
 
 # Load in the data
-tracks_df <- read.csv("df_morningtracks.csv", header = TRUE)  # Foraging tracks 
+tracks_df <- read.csv("df_morningtracks_part1.csv", header = TRUE) %>%   # Foraging tracks 
+  bind_rows(read.csv("df_morningtracks_part2.csv", header = TRUE))
 d <- paste0("Habitat map/habClPanRiver.shp")  # Habitat Map
 o <- terra::vect(d) %>% st_as_sf()
 o <- st_set_crs(o, "+proj=utm +zone=34 +south +datum=WGS84")

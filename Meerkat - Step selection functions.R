@@ -13,7 +13,8 @@ setwd("INSERT FILE PATH")
 lapply(c("adehabitatLT", "amt", "emmeans", "geosphere", "ggplot2", "glmmTMB", "job", "lubridate", "patchwork", "sf", "terra", "tidyverse", "broom.mixed"), FUN = library, character.only = TRUE)
 
 # load the data: 
-tracks_df <- read.csv("df_morningtracks.csv", header = TRUE) # morning tracks
+tracks_df <- read.csv("df_morningtracks_part1.csv", header = TRUE) %>%   # Foraging tracks 
+  bind_rows(read.csv("df_morningtracks_part2.csv", header = TRUE))
 d <- paste0("Habitat map/habClPanRiver.shp")  # Habitat Map
 
 # The script has three broad sections. In the first section we interpolate the morning tracks (i). In the second, we create the randomised movement steps (ii), and in the third, we fit the various step selection analyses (iii). 

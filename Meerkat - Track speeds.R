@@ -7,14 +7,15 @@
 
 ########################################################
 
-setwd("INSERT FILEPATH")
+setwd("INSERT HERE")
 
 # Load packages 
 lapply(c("tidyverse", "lubridate", "nlme", "ggeffects", "emmeans", "DHARMa", "patchwork"), 
        FUN = library, character.only = TRUE)
 
 # Load in the data
-tracks_df <- read.csv("df_morningtracks.csv", header = TRUE) 
+tracks_df <- read.csv("df_morningtracks_part1.csv", header = TRUE) %>%   # Foraging tracks 
+  bind_rows(read.csv("df_morningtracks_part2.csv", header = TRUE))
   
 # Rework some of the variables before modelling
 tracks_df <- mutate(tracks_df, 

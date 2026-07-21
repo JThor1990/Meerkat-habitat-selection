@@ -23,9 +23,9 @@ FH <- data.frame(longitude = 21.83264, latitude = -26.97850)
 
 # Based on the % of the different habitats merge some categories
 o <- o %>%
-  mutate(Class_Name = case_when( Class_Name == 'DD' ~ 'Drie Doring',
+  mutate(Class_Name = case_when( Class_Name == 'DD' ~ 'Shrubland',
     Class_Name == 'grassland' ~ 'Grassland',
-    Class_Name == 'RS mix' ~ 'Red Sand', 
+    Class_Name == 'RS mix' ~ 'Savanna', 
     Class_Name %in% c('WS mix', "pan", "Riverbed") ~ 'White Sand'))
 
 # Convert the polygon coords to km scale
@@ -64,6 +64,8 @@ modDF <- modDF %>%
 modDF$season[modDF$season == "May-Sep"] <- "Dry (May-Sep)"
 modDF$season[modDF$season == "Oct-Apr"] <- "Wet (Oct-Apr)"
 
+modDF$habitat <- factor(modDF$habitat, levels=c("Shrubland", "Grassland", "Savanna", "White sand"))
+
 p <- ggplot(filter(modDF, ForTime <= 180)) +
   geom_histogram(aes(x=ForTime, fill = habitat), position="fill", 
                  binwidth = 15, boundary = 0) +
@@ -73,7 +75,8 @@ p <- ggplot(filter(modDF, ForTime <= 180)) +
   facet_wrap(~season) +
   coord_cartesian(expand = F) +
   scale_x_continuous(breaks = seq(0, 180, 30)) + 
-  scale_fill_manual(values = c("forestgreen", "chocolate", "sandybrown", "burlywood")) + 
+  scale_fill_manual(values = c("forestgreen", "chocolate", "sandybrown", "burlywood"), 
+                    labels = c("Shrubland", "Grassland", "Mixed savanna", "Open white sand")) + 
   theme_bw() + 
   theme(legend.title = element_blank(), 
         axis.title = element_text(size = 11),
@@ -82,7 +85,8 @@ p <- ggplot(filter(modDF, ForTime <= 180)) +
         strip.background = element_blank(),
         strip.text = element_text(size = 10)) + 
   labs(x = "Foraging time (minutes)", 
-       y = "Proportion")
+       y = "Proportion") 
+  
 
 # Extract the max point of all bars for Grassland, Red Sand, and White Sand
 histlines <- ggplot_build(p)$data[[1]] %>% 
@@ -223,7 +227,7 @@ modDF_Burrow <- modDF_Burrow %>%
 # Convert to sdmTMB mesh 
 modDF_Burrow <- mutate(modDF_Burrow, 
                        GroupRef = as.factor(GroupRef), 
-                       habitat = as.factor(habitat))
+                       habitat = relevel(habitat, ref="Shrubland"))
 
 mesh_Burrow <- make_mesh(modDF_Burrow, c("X","Y"), mesh = inla_mesh2)
 
@@ -259,12 +263,12 @@ Contrasts_Burrow <- data.frame(BurrowContrast$contrasts) %>%
   mutate(Group1 = trimws(str_split_fixed(contrast, "-", n=2))[,1],
          Group2 = trimws(str_split_fixed(contrast, "-", n=2))[,2]) %>%
   mutate(season = factor(season, levels = c("Wet (Oct-Apr)", "Dry (May-Sep)")), 
-         Group2 = case_when(Group2 == "Red Sand" ~ "Red sand", 
-                            Group2 == "White Sand" ~ "White sand", 
+         Group2 = case_when(Group2 == "Savanna" ~ "Mixed\nsavanna", 
+                            Group2 == "White Sand" ~ "Open\nwhite sand", 
                             TRUE ~ Group2))   %>% 
   mutate(estimate = estimate*-1)
 
-plot1 <- ggplot(filter(Contrasts_Burrow, Group1 == "Drie Doring"), aes(x = Group2, y = exp(estimate))) +
+plot1 <- ggplot(filter(Contrasts_Burrow, Group1 == "Shrubland"), aes(x = Group2, y = exp(estimate))) +
   geom_hline(yintercept = 1, linetype = 2, colour = "forestgreen",lwd=1) +
   geom_errorbar(aes(ymin = exp(estimate - 1.96*SE), 
                     ymax = exp(estimate + 1.96*SE), 
@@ -272,8 +276,7 @@ plot1 <- ggplot(filter(Contrasts_Burrow, Group1 == "Drie Doring"), aes(x = Group
   geom_point(size = 3.5, aes(fill = Group2), shape=21,stroke= 0.5) +
   facet_wrap(~season, ncol=2) +
   labs(y = expression("Selection intensity " ~ (italic(e)^{italic(beta)[hab]})), 
-       tag = "(c)",
-       subtitle = "Landscape-scale: burrow habitat selection") +
+       tag = "(c)") +
   theme_bw() +
   theme(legend.position = "none", 
         axis.title.x = element_blank(), 
@@ -363,7 +366,7 @@ modDF_Forage <- modDF_Forage %>% mutate(wt = case_when(Present == 1 ~ 1e-6,
 # Ensure categorical random effects for each model
 modDF_Forage <- mutate(modDF_Forage, 
                        GroupRef = as.factor(GroupRef),
-                       habitat = as.factor(habitat))
+                       habitat = relevel(habitat, ref="Shrubland"))
 
 # Fit the models 
 mesh_FOR <- make_mesh(modDF_Forage, c("X","Y"), mesh = inla_mesh)
@@ -405,13 +408,13 @@ Contrasts_Forage <- data.frame(ForContrast$contrasts) %>%
             mutate(Group1 = trimws(str_split_fixed(contrast, "-", n=2))[,1],
                    Group2 = trimws(str_split_fixed(contrast, "-", n=2))[,2]) %>%
           mutate(season = factor(season, levels = c("Wet (Oct-Apr)", "Dry (May-Sep)")),
-                 Group2 = case_when(Group2 == "Red Sand" ~ "Red sand", 
-                                    Group2 == "White Sand" ~ "White sand", 
+                 Group2 = case_when(Group2 == "Savanna" ~ "Mixed\nsavanna", 
+                                    Group2 == "White Sand" ~ "Open\nwhite sand", 
                                     TRUE ~ Group2)) %>%
   mutate(estimate = estimate*-1)
 
 # Plot the relative intensity of use
-plot2 <- ggplot(Contrasts_Forage %>% filter(Group1 == "Drie Doring"),
+plot2 <- ggplot(Contrasts_Forage %>% filter(Group1 == "Shrubland"),
        aes(x=Group2,y=exp(estimate))) +
   geom_hline(yintercept = 1, linetype = 2, colour = "forestgreen",lwd=1) +
   geom_errorbar(aes(ymin = exp(estimate - 1.96*SE), 
@@ -421,8 +424,7 @@ plot2 <- ggplot(Contrasts_Forage %>% filter(Group1 == "Drie Doring"),
   #geom_point(size = 3.5, aes(colour = Group2), shape=4,stroke= 2) +
   facet_wrap(~season, ncol=2) +
   labs(y = expression("Selection intensity " ~ (italic(e)^{italic(beta)[hab]})), 
-       tag = "(d)",
-       subtitle = "Landscape-scale: foraging area selection") +
+       tag = "(d)") +
   theme_bw() +
   theme(legend.position = "none", 
         axis.title.x = element_blank(), 

@@ -129,10 +129,11 @@ o <- st_set_crs(o, "+proj=utm +zone=34 +south +datum=WGS84")
 
 # Based on the % of the different habitats merge some categories
 o <- o %>%
-  mutate(Class_Name = case_when( Class_Name == 'DD' ~ 'Drie Doring',
+  mutate(Class_Name = case_when( Class_Name == 'DD' ~ 'Shrubland',
                                  Class_Name == 'grassland' ~ 'Grassland',
-                                 Class_Name == 'RS mix' ~ 'Red Sand', 
+                                 Class_Name == 'RS mix' ~ 'Savanna', 
                                  Class_Name %in% c('WS mix', "pan", "Riverbed") ~ 'White Sand'))
+
 
 # To get the function to work I need to convert the veg cover map into a spatial raster
 # For this is makes sense to to check the resolution of the features in the polygon data
@@ -246,7 +247,7 @@ alltracks_df$habitat_end <- as.factor(alltracks_df$habitat_end)
 alltracks_df <- alltracks_df %>% 
   group_by(SessionID) %>% 
   mutate(habitat_end = factor(habitat_end, 
-                              levels = c("Drie Doring", "Grassland", "Red Sand", "White Sand"))) %>% 
+                              levels = c("Shrubland", "Grassland", "Savanna", "White sand"))) %>% 
   ungroup()  
 
 # Dry season model 
@@ -306,10 +307,10 @@ fixef_habitat_dry <- tidy(mkat_ssf_mod1, effects = "fixed") %>%
   mutate(fe_abs_logintensity = if_else(term == "(Intercept)", 
                                        fe_estimate,  
                                        fe_estimate + fe_estimate[term == "(Intercept)"]), 
-         term = case_when(term == "(Intercept)" ~ "Drie doring", 
-                          term == "habitat_endWhite Sand" ~ "White sand",
+         term = case_when(term == "(Intercept)" ~ "Shrubland", 
+                          term == "habitat_endWhite sand" ~ "White sand",
                           term == "habitat_endGrassland" ~ "Grassland", 
-                          term == "habitat_endRed Sand" ~ "Red sand"), 
+                          term == "habitat_endSavanna" ~ "Savanna"), 
          season = "Dry (May-Sep)") %>% 
   rename(habitat = term)  %>% 
   data.frame()
@@ -320,19 +321,22 @@ fixef_habitat_wet <- tidy(mkat_ssf_mod2, effects = "fixed") %>%
   mutate(fe_abs_logintensity = if_else(term == "(Intercept)", 
                                        fe_estimate,  
                                        fe_estimate + fe_estimate[term == "(Intercept)"]), 
-         term = case_when(term == "(Intercept)" ~ "Drie doring", 
-                          term == "habitat_endWhite Sand" ~ "White sand",
+         term = case_when(term == "(Intercept)" ~ "Shrubland", 
+                          term == "habitat_endWhite sand" ~ "White sand",
                           term == "habitat_endGrassland" ~ "Grassland", 
-                          term == "habitat_endRed Sand" ~ "Red sand"), 
+                          term == "habitat_endSavanna" ~ "Savanna"), 
          season = "Wet (Oct-Apr)") %>% 
   rename(habitat = term) %>% 
   data.frame()
 
 fixef_habitat <- bind_rows(fixef_habitat_dry, fixef_habitat_wet) %>% 
-  mutate(season = factor(season, levels = c("Wet (Oct-Apr)", "Dry (May-Sep)")))
+  mutate(season = factor(season, levels = c("Wet (Oct-Apr)", "Dry (May-Sep)")), 
+         habitat = case_when(habitat == "Savanna" ~ "Mixed\nsavanna",
+                             habitat == "White sand" ~ "Open\nwhite sand",
+                             TRUE ~ habitat))
 
 # Plot the relative selection intensity in each season, ignoring group effects
-p1 <- ggplot(filter(fixef_habitat, habitat != "Drie doring"), aes(x = habitat, y = exp(fe_estimate))) + 
+p1 <- ggplot(filter(fixef_habitat, habitat != "Shrubland"), aes(x = habitat, y = exp(fe_estimate))) + 
   geom_hline(yintercept = 1, linetype = 2, colour = "forestgreen") +
   geom_errorbar(aes(ymin = exp(fe_estimate - 1.96*std.error), 
                     ymax = exp(fe_estimate + 1.96*std.error), 
@@ -367,10 +371,10 @@ groupe_dry <- sweep(re_dry, 2, fe_dry[names(re_dry)], FUN = "+")
 ranef_habitat_dry <- as.data.frame(groupe_dry) %>%
   tibble::rownames_to_column("GroupName") %>%
   pivot_longer(cols = -GroupName, names_to = "habitat", values_to = "effect") %>% 
-  filter(habitat != "habitat_endDrie Doring") %>% 
-  mutate(habitat = case_when(habitat == "habitat_endWhite Sand" ~ "White sand",
+  filter(habitat != "habitat_endShrubland") %>% 
+  mutate(habitat = case_when(habitat == "habitat_endWhite sand" ~ "Open\nwhite sand",
                              habitat == "habitat_endGrassland" ~ "Grassland", 
-                             habitat == "habitat_endRed Sand" ~ "Red sand"), 
+                             habitat == "habitat_endSavanna" ~ "Mixed\nsavanna"), 
          season = "Dry (May-Sep)")
 
 fe_wet <- fixef(mkat_ssf_mod2)$cond
@@ -379,10 +383,10 @@ groupe_wet <- sweep(re_wet, 2, fe_wet[names(re_wet)], FUN = "+")
 ranef_habitat_wet <- as.data.frame(groupe_wet) %>%
   tibble::rownames_to_column("GroupName") %>%
   pivot_longer(cols = -GroupName, names_to = "habitat", values_to = "effect") %>% 
-  filter(habitat != "habitat_endDrie Doring") %>% 
-  mutate(habitat = case_when(habitat == "habitat_endWhite Sand" ~ "White sand",
+  filter(habitat != "habitat_endShrubland") %>% 
+  mutate(habitat = case_when(habitat == "habitat_endWhite sand" ~ "Open\nwhite sand",
                              habitat == "habitat_endGrassland" ~ "Grassland", 
-                             habitat == "habitat_endRed Sand" ~ "Red sand"), 
+                             habitat == "habitat_endSavanna" ~ "Mixed\nsavanna"), 
          season = "Wet (Oct-Apr)")
 
 ranef_habitat <- bind_rows(ranef_habitat_dry, ranef_habitat_wet) %>% 
@@ -393,13 +397,13 @@ p2 <- ggplot(ranef_habitat) +
   geom_hline(yintercept = 1, linetype = 2, colour = "forestgreen") +
   geom_point(aes(x = habitat, y = exp(effect)),
              position = position_jitter(width = 0.2), shape = 1) +
-  geom_errorbar(data = filter(fixef_habitat, habitat != "Drie doring"), 
+  geom_errorbar(data = filter(fixef_habitat, habitat != "Shrubland"), 
                 aes(x = habitat, ymin = exp(fe_estimate - 1.96*std.error), 
                     ymax = exp(fe_estimate + 1.96*std.error), 
                     colour = habitat), width = 0, linewidth = 0.8, alpha = 0.6) +
-  geom_point(data = filter(fixef_habitat, habitat != "Drie doring"), 
+  geom_point(data = filter(fixef_habitat, habitat != "Shrubland"), 
              aes(x = habitat, y = exp(fe_estimate), colour = habitat), size = 4.5, alpha = 0.6) +
-  geom_point(data = filter(fixef_habitat, habitat != "Drie doring"), 
+  geom_point(data = filter(fixef_habitat, habitat != "Shrubland"), 
              aes(x = habitat, y = exp(fe_estimate), colour = habitat), size = 4.5, 
              shape = 1, alpha = 0.6, colour = "black") +
   facet_wrap(~season) +
@@ -429,10 +433,10 @@ p2
 habitat_means_dry <- emmeans(mkat_ssf_mod1, ~ habitat_end)
 habitat_contrasts_dry <- data.frame(pairs(habitat_means_dry, adjust = "tukey")) %>% 
   mutate(useratio = exp(estimate), 
-         habitat1 = c("Drie doring", "Drie doring", "Drie doring", "Grassland", 
-                      "Grassland", "Red sand"), 
-         habitat2 = c("Grassland", "Red sand", "White sand", "Red sand", 
-                      "White sand", "White sand")) %>% 
+         habitat1 = c("Shrubland", "Shrubland", "Shrubland", "Grassland", 
+                      "Grassland", "Mixed savanna"), 
+         habitat2 = c("Grassland", "Mixed savanna", "Open white sand", "Mixed savanna", 
+                      "Open white sand", "Open white sand")) %>% 
   select(contrast, habitat1, habitat2, estimate:useratio) %>% 
   mutate(estimate = -1*estimate)
 
@@ -440,10 +444,10 @@ habitat_contrasts_dry <- data.frame(pairs(habitat_means_dry, adjust = "tukey")) 
 habitat_means_wet <- emmeans(mkat_ssf_mod2, ~ habitat_end)
 habitat_contrasts_wet <- data.frame(pairs(habitat_means_wet, adjust = "tukey")) %>% 
   mutate(useratio = exp(estimate), 
-         habitat1 = c("Drie doring", "Drie doring", "Drie doring", "Grassland", 
-                      "Grassland", "Red sand"), 
-         habitat2 = c("Grassland", "Red sand", "White sand", "Red sand", 
-                      "White sand", "White sand")) %>% 
+         habitat1 = c("Shrubland", "Shrubland", "Shrubland", "Grassland", 
+                      "Grassland", "Mixed savanna"), 
+         habitat2 = c("Grassland", "Mixed savanna", "Open white sand", "Mixed savanna", 
+                      "Open white sand", "Open white sand")) %>% 
   select(contrast, habitat1, habitat2, estimate:useratio) %>% 
   mutate(estimate = -1*estimate)
 
@@ -460,11 +464,6 @@ habitat_contrasts_wet <- data.frame(pairs(habitat_means_wet, adjust = "tukey")) 
  # then we get the per-habitat availability
  dryseason_availability <- alltracks_dry %>% 
    filter(case_ == 0) %>% 
-   mutate(habitat_end = as.character(habitat_end) ,
-          habitat_end = case_when(habitat_end == "White Sand" ~ "White sand", 
-                                  habitat_end == "Drie Doring" ~ "Drie doring",
-                                  habitat_end == "Grassland" ~ "Grassland", 
-                                  habitat_end == "Red Sand" ~ "Red sand")) %>% 
    group_by(habitat_end) %>% 
    summarise(availability = n()) %>% 
    rename(habitat = habitat_end)
@@ -496,7 +495,7 @@ habitat_contrasts_wet <- data.frame(pairs(habitat_means_wet, adjust = "tukey")) 
           total_weighted_intensity = sum(weighted_intensity),             # Compute total sum
           probability_of_use = weighted_intensity / total_weighted_intensity)  # Normalize to sum to 1
 
- # Ideally would want confidence intervals around this but I think it's fine as is for now as a descriptive
+ # Ideally would want confidence intervals around this but I think it's fine as is as a descriptive
  bind_rows(select(fixef_habitat_dry, habitat, probability_of_use) %>% 
    mutate(season = "Dry"), select(fixef_habitat_wet, habitat, probability_of_use) %>% 
      mutate(season = "Wet")) %>% 

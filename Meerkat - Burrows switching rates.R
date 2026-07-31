@@ -55,7 +55,7 @@ burrow_sequences$GroupSize_z <- as.numeric(scale(burrow_sequences$GroupSize))
 burrow_sequences$season <- as.character(burrow_sequences$season)
 burrow_sequences$PupPresence <- as.character(burrow_sequences$PupPresence)
 burrow_sequences$habitat <- factor(burrow_sequences$habitat, 
-                                   levels=c("Shrubland", "Grassland", "Savanna", "White sand"))
+                                   levels=c("LowShrubland", "HighDuneveld", "LowDuneveld", "RiverbedPan"))
 
 m1 <- glmmTMB(BurrowChange ~ habitat*season + GroupSize_z + I(GroupSize_z^2) + 
             PupPresence*season + breedingyear + (1|GroupRef) + (1|BurrowRef_New), 
@@ -99,11 +99,11 @@ p_habitatseason <- p_habitatseason %>%
   rename(season = x) %>% 
   mutate(season = factor(if_else(season == "May-Sep", "Dry (May-Sep)", "Wet (Oct-Apr)"), 
                          levels = c("Wet (Oct-Apr)", "Dry (May-Sep)")),
-         habitat = factor(case_when(group  == "Shrubland" ~ "Shrubland", 
-                                    group  == "Grassland" ~ "Grassland", 
-                                    group  == "Savanna" ~ "Mixed savanna", 
-                                    group == "White sand" ~ "Open white sand"), 
-                          levels = c("Grassland", "Mixed savanna", "Open white sand", "Shrubland")))
+         habitat = factor(case_when(group  == "LowShrubland" ~ "Low shrubland", 
+                                    group  == "HighDuneveld" ~ "High duneveld", 
+                                    group  == "LowDuneveld" ~ "Low duneveld", 
+                                    group == "RiverbedPan" ~ "Riverbed and pans"), 
+                          levels = c("High duneveld", "Low duneveld", "Riverbed and pans", "Low shrubland")))
 
 # Plotting habitat type by season
 p_habitatseason <- ggplot(data = p_habitatseason, 

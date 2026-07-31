@@ -25,7 +25,7 @@ tracks_df <- mutate(tracks_df,
                     breedingyear = as.factor(breedingyear), 
                     GroupSize_z = as.numeric(scale(GroupSize)), 
                     TimeForaging_z = as.numeric(scale(TimeForaging)), 
-                    habitat = factor(habitat, levels=c("Shrubland", "Grassland", "Savanna", "White sand")))
+                    habitat = factor(habitat, levels=c("LowShrubland", "HighDuneveld", "LowDuneveld", "RiverbedPan")))
          
 # add an Autocorr term for the date by each group
 tracks_df <- tracks_df %>% 
@@ -128,11 +128,11 @@ p_habitatseason <- p_habitatseason %>%
   rename(season = x, habitat = group) %>% 
   mutate(season = factor(if_else(season == "May-Sep", "Dry (May-Sep)", "Wet (Oct-Apr)"), 
                          levels = c("Wet (Oct-Apr)", "Dry (May-Sep)")),
-         habitat = factor(case_when(habitat == "Grassland" ~ "Grassland",
-                                    habitat == "Savanna" ~ "Mixed savanna",
-                                    habitat == "White sand" ~ "Open white sand",
-                                    habitat == "Shrubland" ~ "Shrubland"), 
-                          levels = c("Grassland", "Mixed savanna", "Open white sand", "Shrubland")),  
+         habitat = factor(case_when(habitat == "HighDuneveld" ~ "High duneveld",
+                                    habitat == "LowDuneveld" ~ "Low duneveld",
+                                    habitat == "RiverbedPan" ~ "Riverbed and pans",
+                                    habitat == "LowShrubland" ~ "Low shrubland"), 
+                          levels = c("High duneveld", "Low duneveld", "Riverbed and pans", "Low shrubland")),  
          predicted = predicted, 
          conf.low = conf.low, 
          conf.high = conf.high)
@@ -298,7 +298,7 @@ firsthab <- tracks_df %>%
 
 # join the two together and add additional necessary info
 track_info <- left_join(track_info, firsthab) %>% 
-  mutate(BurrowHabitat = factor(burrow_habitat, levels = c("Shrubland", "Grassland", "Savanna", "White sand"))) %>% 
+  mutate(BurrowHabitat = factor(burrow_habitat, levels = c("LowShrubland", "HighDuneveld", "LowDuneveld", "RiverbedPan"))) %>% 
   left_join(dplyr::select(tracks_df, SessionID, GroupName, Date, season, GroupSize, PupPresence, breedingyear) %>% distinct())
 
 hist(track_info$tracklength)
@@ -350,11 +350,11 @@ p_habitatseason2 <- p_habitatseason2 %>%
   rename(season = x, habitat = group) %>% 
   mutate(season = factor(if_else(season == "May-Sep", "Dry (May-Sep)", "Wet (Oct-Apr)"), 
                          levels = c("Wet (Oct-Apr)", "Dry (May-Sep)")),
-         habitat = factor(case_when(habitat == "Grassland" ~ "Grassland",
-                                    habitat == "Savanna" ~ "Mixed savanna",
-                                    habitat == "White sand" ~ "Open white sand",
-                                    habitat == "Shrubland" ~ "Shrubland"), 
-                          levels = c("Grassland", "Mixed savanna", "Open white sand", "Shrubland")),  
+         habitat = factor(case_when(habitat == "HighDuneveld" ~ "High duneveld",
+                                    habitat == "LowDuneveld" ~ "Low duneveld",
+                                    habitat == "RiverbedPan" ~ "Riverbed and pans",
+                                    habitat == "LowShrubland" ~ "Low shrubland"), 
+                          levels = c("High duneveld", "Low duneveld", "Riverbed and pans", "Low shrubland")),  
          predicted = predicted, 
          conf.low = conf.low, 
          conf.high = conf.high)

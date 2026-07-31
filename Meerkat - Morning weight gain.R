@@ -27,7 +27,7 @@ mwg_df <- mwg_df %>%
   ungroup() %>% 
   mutate(GroupSize_z = as.numeric(scale(GroupSize)), 
          Age_years_z = as.numeric(scale(Age_years)), 
-         habitat = factor(habitat, levels=c("Shrubland", "Grassland", "Savanna", "White sand")))
+         habitat = factor(habitat, levels=c("LowShrubland", "HighDuneveld", "LowDuneveld", "RiverbedPan")))
 
 mean(mwg_df$RateWeightGain_ghr) ; sd(mwg_df$RateWeightGain_ghr)
 
@@ -84,11 +84,11 @@ p_habitatseason <- p_habitatseason %>%
   rename(season = x, habitat = group) %>% 
   mutate(season = factor(if_else(season == "May-Sep", "Dry (May-Sep)", "Wet (Oct-Apr)"), 
                          levels = c("Wet (Oct-Apr)", "Dry (May-Sep)")),
-         habitat = factor(case_when(habitat == "Grassland" ~ "Grassland",
-                                    habitat == "Savanna" ~ "Mixed savanna",
-                                    habitat == "White sand" ~ "Open white sand",
-                                    habitat == "Shrubland" ~ "Shrubland"), 
-                                    levels = c("Grassland", "Mixed savanna", "Open white sand", "Shrubland")), 
+         habitat = factor(case_when(habitat == "HighDuneveld" ~ "High duneveld",
+                                    habitat == "LowDuneveld" ~ "Low duneveld",
+                                    habitat == "RiverbedPan" ~ "Riverbed and pans",
+                                    habitat == "LowShrubland" ~ "Low shrubland"), 
+                                    levels = c("High duneveld", "Low duneveld", "Riverbed and pans", "Low shrubland")), 
          predicted = predicted, 
          conf.low = conf.low, 
          conf.high = conf.high)

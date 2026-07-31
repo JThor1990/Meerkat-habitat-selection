@@ -129,10 +129,10 @@ o <- st_set_crs(o, "+proj=utm +zone=34 +south +datum=WGS84")
 
 # Based on the % of the different habitats merge some categories
 o <- o %>%
-  mutate(Class_Name = case_when( Class_Name == 'DD' ~ 'Shrubland',
-                                 Class_Name == 'grassland' ~ 'Grassland',
-                                 Class_Name == 'RS mix' ~ 'Savanna', 
-                                 Class_Name %in% c('WS mix', "pan", "Riverbed") ~ 'White Sand'))
+  mutate(Class_Name = case_when( Class_Name == 'DD' ~ 'LowShrubland',
+                                 Class_Name == 'grassland' ~ 'HighDuneveld',
+                                 Class_Name == 'RS mix' ~ 'LowDuneveld', 
+                                 Class_Name %in% c('WS mix', "pan", "Riverbed") ~ 'RiverbedPan'))
 
 
 # To get the function to work I need to convert the veg cover map into a spatial raster
@@ -247,7 +247,7 @@ alltracks_df$habitat_end <- as.factor(alltracks_df$habitat_end)
 alltracks_df <- alltracks_df %>% 
   group_by(SessionID) %>% 
   mutate(habitat_end = factor(habitat_end, 
-                              levels = c("Shrubland", "Grassland", "Savanna", "White sand"))) %>% 
+                              levels = c("LowShrubland", "HighDuneveld", "LowDuneveld", "RiverbedPan"))) %>% 
   ungroup()  
 
 # Dry season model 
@@ -307,10 +307,10 @@ fixef_habitat_dry <- tidy(mkat_ssf_mod1, effects = "fixed") %>%
   mutate(fe_abs_logintensity = if_else(term == "(Intercept)", 
                                        fe_estimate,  
                                        fe_estimate + fe_estimate[term == "(Intercept)"]), 
-         term = case_when(term == "(Intercept)" ~ "Shrubland", 
-                          term == "habitat_endWhite sand" ~ "White sand",
-                          term == "habitat_endGrassland" ~ "Grassland", 
-                          term == "habitat_endSavanna" ~ "Savanna"), 
+         term = case_when(term == "(Intercept)" ~ "LowShrubland", 
+                          term == "habitat_endRiverbedPan" ~ "RiverbedPan",
+                          term == "habitat_endHighDuneveld" ~ "HighDuneveld", 
+                          term == "habitat_endLowDuneveld" ~ "LowDuneveld"), 
          season = "Dry (May-Sep)") %>% 
   rename(habitat = term)  %>% 
   data.frame()
@@ -321,22 +321,23 @@ fixef_habitat_wet <- tidy(mkat_ssf_mod2, effects = "fixed") %>%
   mutate(fe_abs_logintensity = if_else(term == "(Intercept)", 
                                        fe_estimate,  
                                        fe_estimate + fe_estimate[term == "(Intercept)"]), 
-         term = case_when(term == "(Intercept)" ~ "Shrubland", 
-                          term == "habitat_endWhite sand" ~ "White sand",
-                          term == "habitat_endGrassland" ~ "Grassland", 
-                          term == "habitat_endSavanna" ~ "Savanna"), 
+         term = case_when(term == "(Intercept)" ~ "LowShrubland", 
+                          term == "habitat_endRiverbedPan" ~ "RiverbedPan",
+                          term == "habitat_endHighDuneveld" ~ "HighDuneveld", 
+                          term == "habitat_endLowDuneveld" ~ "LowDuneveld"), 
          season = "Wet (Oct-Apr)") %>% 
   rename(habitat = term) %>% 
   data.frame()
 
 fixef_habitat <- bind_rows(fixef_habitat_dry, fixef_habitat_wet) %>% 
   mutate(season = factor(season, levels = c("Wet (Oct-Apr)", "Dry (May-Sep)")), 
-         habitat = case_when(habitat == "Savanna" ~ "Mixed\nsavanna",
-                             habitat == "White sand" ~ "Open\nwhite sand",
-                             TRUE ~ habitat))
+         habitat = case_when(habitat == "LowShrubland" ~ "Low shrubland",
+                             habitat == "RiverbedPan" ~ "Riverbed\nand pans",
+                             habitat == "LowDuneveld" ~ "Low\nduneveld",
+                             habitat == "HighDuneveld" ~ "High\nduneveld"))
 
 # Plot the relative selection intensity in each season, ignoring group effects
-p1 <- ggplot(filter(fixef_habitat, habitat != "Shrubland"), aes(x = habitat, y = exp(fe_estimate))) + 
+p1 <- ggplot(filter(fixef_habitat, habitat != "Low shrubland"), aes(x = habitat, y = exp(fe_estimate))) + 
   geom_hline(yintercept = 1, linetype = 2, colour = "forestgreen") +
   geom_errorbar(aes(ymin = exp(fe_estimate - 1.96*std.error), 
                     ymax = exp(fe_estimate + 1.96*std.error), 
@@ -371,10 +372,10 @@ groupe_dry <- sweep(re_dry, 2, fe_dry[names(re_dry)], FUN = "+")
 ranef_habitat_dry <- as.data.frame(groupe_dry) %>%
   tibble::rownames_to_column("GroupName") %>%
   pivot_longer(cols = -GroupName, names_to = "habitat", values_to = "effect") %>% 
-  filter(habitat != "habitat_endShrubland") %>% 
-  mutate(habitat = case_when(habitat == "habitat_endWhite sand" ~ "Open\nwhite sand",
-                             habitat == "habitat_endGrassland" ~ "Grassland", 
-                             habitat == "habitat_endSavanna" ~ "Mixed\nsavanna"), 
+  filter(habitat != "habitat_endLowShrubland") %>% 
+  mutate(habitat = case_when(habitat == "habitat_endLowDuneveld" ~ "Low\nduneveld",
+                             habitat == "habitat_endHighDuneveld" ~ "High\nduneveld", 
+                             habitat == "habitat_endRiverbedPan" ~ "Riverbed\nand pans"), 
          season = "Dry (May-Sep)")
 
 fe_wet <- fixef(mkat_ssf_mod2)$cond
@@ -383,10 +384,10 @@ groupe_wet <- sweep(re_wet, 2, fe_wet[names(re_wet)], FUN = "+")
 ranef_habitat_wet <- as.data.frame(groupe_wet) %>%
   tibble::rownames_to_column("GroupName") %>%
   pivot_longer(cols = -GroupName, names_to = "habitat", values_to = "effect") %>% 
-  filter(habitat != "habitat_endShrubland") %>% 
-  mutate(habitat = case_when(habitat == "habitat_endWhite sand" ~ "Open\nwhite sand",
-                             habitat == "habitat_endGrassland" ~ "Grassland", 
-                             habitat == "habitat_endSavanna" ~ "Mixed\nsavanna"), 
+  filter(habitat != "habitat_endLowShrubland") %>% 
+  mutate(habitat = case_when(habitat == "habitat_endLowDuneveld" ~ "Low\nduneveld",
+                             habitat == "habitat_endHighDuneveld" ~ "High\nduneveld", 
+                             habitat == "habitat_endRiverbedPan" ~ "Riverbed\nand pans"), 
          season = "Wet (Oct-Apr)")
 
 ranef_habitat <- bind_rows(ranef_habitat_dry, ranef_habitat_wet) %>% 
@@ -397,13 +398,13 @@ p2 <- ggplot(ranef_habitat) +
   geom_hline(yintercept = 1, linetype = 2, colour = "forestgreen") +
   geom_point(aes(x = habitat, y = exp(effect)),
              position = position_jitter(width = 0.2), shape = 1) +
-  geom_errorbar(data = filter(fixef_habitat, habitat != "Shrubland"), 
+  geom_errorbar(data = filter(fixef_habitat, habitat != "Low shrubland"), 
                 aes(x = habitat, ymin = exp(fe_estimate - 1.96*std.error), 
                     ymax = exp(fe_estimate + 1.96*std.error), 
                     colour = habitat), width = 0, linewidth = 0.8, alpha = 0.6) +
-  geom_point(data = filter(fixef_habitat, habitat != "Shrubland"), 
+  geom_point(data = filter(fixef_habitat, habitat != "Low shrubland"), 
              aes(x = habitat, y = exp(fe_estimate), colour = habitat), size = 4.5, alpha = 0.6) +
-  geom_point(data = filter(fixef_habitat, habitat != "Shrubland"), 
+  geom_point(data = filter(fixef_habitat, habitat != "Low shrubland"), 
              aes(x = habitat, y = exp(fe_estimate), colour = habitat), size = 4.5, 
              shape = 1, alpha = 0.6, colour = "black") +
   facet_wrap(~season) +
@@ -433,10 +434,10 @@ p2
 habitat_means_dry <- emmeans(mkat_ssf_mod1, ~ habitat_end)
 habitat_contrasts_dry <- data.frame(pairs(habitat_means_dry, adjust = "tukey")) %>% 
   mutate(useratio = exp(estimate), 
-         habitat1 = c("Shrubland", "Shrubland", "Shrubland", "Grassland", 
-                      "Grassland", "Mixed savanna"), 
-         habitat2 = c("Grassland", "Mixed savanna", "Open white sand", "Mixed savanna", 
-                      "Open white sand", "Open white sand")) %>% 
+         habitat1 = c("Low shrubland", "Low shrubland", "Low shrubland", "High duneveld", 
+                      "High duneveld", "Low duneveld"), 
+         habitat2 = c("High duneveld", "Low duneveld", "Riverbed and pans", "Low duneveld", 
+                      "Riverbed and pans", "Riverbed and pans")) %>% 
   select(contrast, habitat1, habitat2, estimate:useratio) %>% 
   mutate(estimate = -1*estimate)
 
@@ -444,10 +445,10 @@ habitat_contrasts_dry <- data.frame(pairs(habitat_means_dry, adjust = "tukey")) 
 habitat_means_wet <- emmeans(mkat_ssf_mod2, ~ habitat_end)
 habitat_contrasts_wet <- data.frame(pairs(habitat_means_wet, adjust = "tukey")) %>% 
   mutate(useratio = exp(estimate), 
-         habitat1 = c("Shrubland", "Shrubland", "Shrubland", "Grassland", 
-                      "Grassland", "Mixed savanna"), 
-         habitat2 = c("Grassland", "Mixed savanna", "Open white sand", "Mixed savanna", 
-                      "Open white sand", "Open white sand")) %>% 
+         habitat1 = c("Low shrubland", "Low shrubland", "Low shrubland", "High duneveld", 
+                      "High duneveld", "Low duneveld"), 
+         habitat2 = c("High duneveld", "Low duneveld", "Riverbed and pans", "Low duneveld", 
+                      "Riverbed and pans", "Riverbed and pans")) %>% 
   select(contrast, habitat1, habitat2, estimate:useratio) %>% 
   mutate(estimate = -1*estimate)
 
